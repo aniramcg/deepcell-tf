@@ -99,11 +99,15 @@ def get_data(file_name, mode='sample', test_size=.2, seed=0):
         return train_dict, test_dict
 
     training_data = np.load(file_name)
-    X = training_data['X']
-    y = training_data['y']
+#    X = training_data['X']
+#    y = training_data['y']
+    X_train = training_data['x_train']
+    X_test = training_data['x_test']
+    y_train = training_data['y_train']
+    y_test = training_data['y_test']
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=seed)
+#    X_train, X_test, y_train, y_test = train_test_split(
+#        X, y, test_size=test_size, random_state=seed)
 
     train_dict = {
         'X': X_train,
