@@ -47,6 +47,89 @@ from deepcell.utils.io_utils import count_image_files
 from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.tracking_utils import load_trks
 
+import os
+import SimpleITK as sitk
+import numpy as np
+
+# This function is placed in deepcell.utils.data_utils
+# Randomly crop the image to a specific size. For data augmentation
+def random_crop(image, label, crop_height, crop_width):
+    if (image.shape[0] != label.shape[0]) or (image.shape[1] != label.shape[1]):
+        raise Exception('Image and label must have the same dimensions!')
+    if (crop_width <= image.shape[1]) and (crop_height <= image.shape[0]):
+        pdf_im = np.ones(label.shape) # y is a mask
+        pdf_im[label>0]=10000 # pdf aquí es un peso. Por ejemplo 10000. 
+        # cropw = int(crop_width/2)
+        # croph = int(crop_height/2)
+        pdf_im = pdf_im[:-crop_height,:-crop_width] # limit the coordinates in which a centroid can lay
+        prob = np.float32(pdf_im)
+        prob = prob.ravel()/np.sum(prob) # convert the 2D matrix into a vector and normalize it so you create a distribution of all the possible values between 1 and prod(pdf.shape)(sum=1)
+        choices = np.prod(pdf_im.shape) 
+        index = np.random.choice(choices, size=1,p = prob) # get a random centroid but following a pdf distribution.
+        coordinates = np.unravel_index(index, shape=pdf_im.shape)
+        y = coordinates[0][0]
+        x = coordinates[1][0]
+        return image[y:y+crop_height, x:x+crop_width], label[y:y+crop_height, x:x+crop_width]
+    else:
+        raise Exception('Crop shape (%d, %d) exceeds image dimensions (%d, %d)!' % (crop_height, crop_width, image.shape[0], image.shape[1]))
+
+
+def get_data_MARINA(DATAPATH, mode='sample', test_size=.2, seed=0, crop_height=256, crop_width=256):
+
+    train_files = os.listdir(os.path.join(DATAPATH, 'train'))
+    X_train = None
+
+    for f in train_files:
+      input_im = sitk.ReadImage(os.path.join(DATAPATH, 'train',f))
+      input_im = sitk.GetArrayFromImage(input_im)
+      input_im = input_im[:,:,0]
+      mask_im = sitk.ReadImage(os.path.join(DATAPATH, 'train_labels',f))
+      mask_im = sitk.GetArrayFromImage(mask_im)
+      mask_im = mask_im[:,:,0]
+      mask_im[mask_im > 0] = 1
+      input_im, mask_im = random_crop(input_im, mask_im, crop_height, crop_width)      
+      input_im = input_im.reshape((1, crop_height, crop_width, 1))
+      mask_im = mask_im.reshape((1, crop_height, crop_width, 1))
+      if X_train is None: 
+        X_train = input_im
+        y_train = mask_im
+      else:
+        X_train = np.concatenate((X_train,input_im), axis=1)
+        y_train = np.concatenate((y_train,mask_im), axis=1)
+
+
+      train_files = os.listdir(os.path.join(DATAPATH, 'test'))
+
+    X_test = None
+    for f in train_files:
+      input_im = sitk.ReadImage(os.path.join(DATAPATH, 'test',f))
+      input_im = sitk.GetArrayFromImage(input_im)
+      input_im = input_im[:,:,0]
+      mask_im = sitk.ReadImage(os.path.join(DATAPATH, 'test_labels',f))
+      mask_im = sitk.GetArrayFromImage(mask_im)
+      mask_im = mask_im[:,:,0]
+      mask_im[mask_im > 0] = 1
+      input_im, mask_im = random_crop(input_im, mask_im, crop_height, crop_width)      
+      input_im = input_im.reshape((1, crop_height, crop_width, 1))
+      mask_im = mask_im.reshape((1, crop_height, crop_width, 1))
+      if X_test is None: 
+        X_test = input_im
+        y_test = mask_im
+      else:
+        X_test = np.concatenate((X_test,input_im), axis=1)
+        y_test = np.concatenate((y_train,mask_im), axis=1)
+
+    train_dict = {
+        'X': X_train,
+        'y': y_train
+    }
+
+    test_dict = {
+        'X': X_test,
+        'y': y_test
+    }
+
+    return train_dict, test_dict
 
 def get_data(file_name, mode='sample', test_size=.2, seed=0):
     """Load data from NPZ file and split into train and test sets

@@ -48,6 +48,7 @@ from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
 from deepcell.utils import tracking_utils
 from deepcell.utils.data_utils import get_data
+from deepcell.utils.data_utils import get_data_MARINA
 from deepcell.utils.train_utils import rate_scheduler
 from deepcell.utils.train_utils import get_callbacks
 
@@ -118,7 +119,7 @@ def train_model_sample(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
+    train_dict, test_dict = get_data_MARINA(dataset, test_size=test_size, seed=seed,crop_height=256, crop_width=256)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
