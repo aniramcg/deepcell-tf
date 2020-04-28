@@ -94,8 +94,8 @@ def get_data_MARINA(DATAPATH, mode='sample', test_size=.2, seed=0, crop_height=2
         X_train = input_im
         y_train = mask_im
       else:
-        X_train = np.concatenate((X_train,input_im), axis=1)
-        y_train = np.concatenate((y_train,mask_im), axis=1)
+        X_train = np.concatenate((X_train,input_im), axis=0)
+        y_train = np.concatenate((y_train,mask_im), axis=0)
 
 
       train_files = os.listdir(os.path.join(DATAPATH, 'test'))
@@ -110,8 +110,8 @@ def get_data_MARINA(DATAPATH, mode='sample', test_size=.2, seed=0, crop_height=2
       mask_im = mask_im[:,:,0]
       mask_im[mask_im > 0] = 1
       input_im, mask_im = random_crop(input_im, mask_im, crop_height, crop_width)      
-      input_im = input_im.reshape((1, crop_height, crop_width, 1))
-      mask_im = mask_im.reshape((1, crop_height, crop_width, 1))
+      input_im = input_im.reshape((1, crop_height, crop_width, 0))
+      mask_im = mask_im.reshape((1, crop_height, crop_width, 0))
       if X_test is None: 
         X_test = input_im
         y_test = mask_im
