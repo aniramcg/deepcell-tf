@@ -117,7 +117,7 @@ def get_data_MARINA(DATAPATH, mode='sample', test_size=.2, seed=0, crop_height=2
         y_test = mask_im
       else:
         X_test = np.concatenate((X_test,input_im), axis=0)
-        y_test = np.concatenate((y_train,mask_im), axis=0)
+        y_test = np.concatenate((y_test,mask_im), axis=0)
 
     train_dict = {
         'X': X_train,
